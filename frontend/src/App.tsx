@@ -11,7 +11,9 @@ import RadarChart from './components/visualization/RadarChart'
 import HistoryChart from './components/visualization/HistoryChart'
 import SkillTree from './components/visualization/SkillTree'
 
-const API_URL = '/api'
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? '/api'
+  : 'https://careerpilot-backend-7pfx.onrender.com/api'
 
 interface Toast {
   id: string
