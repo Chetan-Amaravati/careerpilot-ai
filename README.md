@@ -1,5 +1,8 @@
 # 🚀 CareerPilot AI — Enterprise AI Career Acceleration Platform
 
+[![Live Demo](https://img.shields.io/badge/Vercel-Live%20Demo-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://careerpilot-ai-wine-xi.vercel.app/)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-careerpilot--ai-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Chetan-Amaravati/careerpilot-ai)
+
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-19.0-61DAFB.svg?logo=react&logoColor=black)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
@@ -9,7 +12,9 @@
 [![Vite](https://img.shields.io/badge/Vite-5.4-646CFF.svg?logo=vite&logoColor=white)](https://vitejs.dev)
 [![Tests](https://img.shields.io/badge/Tests-18%20Passed-10B981.svg)](https://pytest.org)
 
-**CareerPilot AI** is a production-ready, enterprise-grade SaaS career acceleration platform. Engineered with **FastAPI**, **React 19 (TypeScript)**, **PostgreSQL (SQLAlchemy 2.0)**, and **Google Gemini 3.5 Flash**, the system parses PDF resumes, conducts ATS gap analyses, builds structured study roadmaps, runs adaptive mock interviews, administers timed skill quizzes, and provides a full-featured AI Career Studio.
+> 🌐 **Live Web Application**: **[https://careerpilot-ai-wine-xi.vercel.app/](https://careerpilot-ai-wine-xi.vercel.app/)**
+>
+> **CareerPilot AI** is a production-ready, enterprise-grade SaaS career acceleration platform. Engineered with **FastAPI**, **React 19 (TypeScript)**, **PostgreSQL (SQLAlchemy 2.0)**, and **Google Gemini 3.5 Flash**, the system parses PDF resumes, conducts ATS gap analyses, builds structured study roadmaps, runs adaptive mock interviews, administers timed skill quizzes, and provides a full-featured AI Career Studio.
 
 ---
 
@@ -226,11 +231,17 @@ Log out and back in on the web client to view platform analytics, top missing sk
 
 ## ☁️ Production Deployment
 
-### Frontend (Vercel)
-The project includes [vercel.json](frontend/vercel.json) and [public/_redirects](frontend/public/_redirects) for Single Page Application client-side routing.
+### 🌐 Live Production Web Application
+* **Live Web App**: **[https://careerpilot-ai-wine-xi.vercel.app/](https://careerpilot-ai-wine-xi.vercel.app/)**
+* **Deployment URL**: `https://careerpilot-rn97p9k82-chetan-portfolio.vercel.app/`
+* **Hosting Platform**: Vercel (Edge Network)
+* **Status**: 🟢 **Live & Production Ready**
+
+### Frontend Setup on Vercel
+The repository includes [vercel.json](frontend/vercel.json) and [public/_redirects](frontend/public/_redirects) for Single Page Application client-side routing.
 1. Connect your repository to Vercel.
 2. Set the Root Directory to `frontend`.
-3. Add the environment variable:
+3. Configure optional environment variables:
    ```env
    VITE_API_URL=https://your-backend-api.onrender.com/api
    ```
