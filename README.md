@@ -16,10 +16,15 @@
 >
 > **CareerPilot AI** is a production-ready, enterprise-grade SaaS career acceleration platform. Engineered with **FastAPI**, **React 19 (TypeScript)**, **PostgreSQL (SQLAlchemy 2.0)**, and **Google Gemini 3.5 Flash**, the system parses PDF resumes, conducts ATS gap analyses, builds structured study roadmaps, runs adaptive mock interviews, administers timed skill quizzes, and provides a full-featured AI Career Studio.
 
+<p align="center">
+  <img src="./docs/screenshots/hero_showcase.png" alt="CareerPilot AI Hero Showcase" width="100%" />
+</p>
+
 ---
 
 ## 📑 Table of Contents
 
+- [Visual Showcase & UI Gallery](#-visual-showcase--ui-gallery)
 - [Key Capabilities](#-key-capabilities)
 - [System Architecture](#-system-architecture)
 - [Technology Stack](#-technology-stack)
@@ -32,6 +37,40 @@
 - [Administrative Workspace](#-administrative-workspace)
 - [Production Deployment](#-production-deployment)
 - [License](#-license)
+
+---
+
+## 🖼️ Visual Showcase & UI Gallery
+
+### 1. Minimalist Obsidian Hero & Live Telemetry
+Deep obsidian base (`#090b0e`), glowing cyberpunk grid mesh backdrop, live system operational status, and 1-click instant demo access:
+<p align="center">
+  <img src="./docs/screenshots/hero_showcase.png" alt="Obsidian Hero & Live Demo" width="100%" />
+</p>
+
+### 2. Intelligent Candidate Dashboard
+Real-time Career Readiness scoring (90%), active resume versioning, weekly learning milestone completion, and ATS score trajectories:
+<p align="center">
+  <img src="./docs/screenshots/dashboard_overview.png" alt="Candidate Dashboard" width="100%" />
+</p>
+
+### 3. Dedicated AI Career Studio
+Before/After bullet rewriter with impact metrics, role-tailored cover letter architect, and LinkedIn bio optimizer:
+<p align="center">
+  <img src="./docs/screenshots/ai_career_studio.png" alt="AI Career Studio" width="100%" />
+</p>
+
+### 4. ATS Gap Analysis & Industry Role Matcher
+Real-time compatibility matching against Stripe, OpenAI, and Netflix job presets with matched vs. missing skill roadmaps:
+<p align="center">
+  <img src="./docs/screenshots/ats_job_matcher.png" alt="ATS Job Matcher" width="100%" />
+</p>
+
+### 5. Multi-Version Resume Vault
+PyMuPDF structural parsing, version management, and interactive click-to-copy action verb chips:
+<p align="center">
+  <img src="./docs/screenshots/resume_vault.png" alt="Resume Vault" width="100%" />
+</p>
 
 ---
 
