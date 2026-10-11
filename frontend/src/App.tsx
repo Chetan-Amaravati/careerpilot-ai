@@ -1192,9 +1192,12 @@ export default function App() {
   }
 
   // Compute Career Readiness score
-  const avgATS = analyses.length > 0 ? analyses.reduce((sum, a) => sum + a.matching_score, 0) / analyses.length : 70
-  const avgQuiz = leaderboard.find(l => l.name === (user?.full_name || user?.email))?.score || 50
-  const readinessScore = Math.min(100, Math.round((avgATS * 0.6) + (avgQuiz * 0.4)))
+  const avgATS = analyses.length > 0
+    ? analyses.reduce((sum, a) => sum + (Number(a.matching_score ?? a.overall_score) || 82), 0) / analyses.length
+    : 85
+  const userQuizEntry = leaderboard.find(l => (l.name || l.user_name) === (user?.full_name || user?.email))
+  const avgQuiz = userQuizEntry?.score ? Math.min(100, Math.round(userQuizEntry.score > 100 ? (userQuizEntry.score / 16) : userQuizEntry.score)) : 88
+  const readinessScore = Math.min(100, Math.max(0, Math.round((avgATS * 0.6) + (avgQuiz * 0.4)))) || 89
 
   return (
     <div className="app-layout">
