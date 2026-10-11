@@ -1,35 +1,44 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.core.config import settings
-from app.core.database import get_db
+from app.core.database import get_db, engine, Base
+import app.models  # Ensure models are loaded for table creation
 from app.api.router import api_router
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Automatically create tables if they do not exist on startup
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as e:
+        print(f"Warning: Database table creation on startup skipped or failed: {e}")
+    yield
 
 app = FastAPI(
     title="AI Resume Analyzer & Skill Gap Assessment API",
     description="Backend services for analyzing resumes, parsing skill gaps, and generating assessment modules.",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Configure CORS (Cross-Origin Resource Sharing)
-# Since the frontend will run on a different port/host (e.g., http://localhost:5173),
-# CORS middleware permits the frontend application to execute requests to our API.
-origins = [
-    "http://localhost:5173",  # Default Vite local development port
-    "http://127.0.0.1:5173",
-]
+origins = [origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_origin_regex="https://.*\\.onrender\\.com",
+    allow_origins=origins if origins else ["*"],
+    allow_origin_regex=r"https://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Include API router under /api prefix and also at root level as a fallback
 app.include_router(api_router, prefix="/api")
+app.include_router(api_router)
 
 
 @app.get("/")
@@ -47,3 +56,4 @@ def health_check(db: Session = Depends(get_db)):
         return {"status": "healthy", "database": "connected"}
     except Exception as e:
         return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
+

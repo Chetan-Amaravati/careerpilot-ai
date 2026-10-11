@@ -29,7 +29,7 @@ def auth_header(client):
 
 
 @patch("app.api.endpoints.resumes.extract_text_from_pdf_bytes")
-@patch("app.api.endpoints.resumes.parse_resume")
+@patch("app.api.endpoints.resumes.gemini_service.parse_resume")
 def test_upload_resume(mock_parse, mock_extract, client, auth_header):
     """Test uploading a resume PDF and storing parsed metadata from Gemini."""
     mock_extract.return_value = "Python Developer raw resume text."
@@ -80,10 +80,11 @@ def test_analyze_skill_gap_endpoint(client, db_session, auth_header):
             learning_path=["Learn Docker basics", "Learn K8s deployment"],
             certifications=["Certified Kubernetes Administrator"],
             project_ideas=["Deploy a microservices app to minikube"]
-        )
+        ),
+        ats_keyword_suggestions=["Docker", "Kubernetes"]
     )
     
-    with patch("app.api.endpoints.analysis.analyze_skill_gap", return_value=mock_gap_result):
+    with patch("app.api.endpoints.analysis.gemini_service.analyze_skill_gap", return_value=mock_gap_result):
         response = client.post(
             "/api/analysis/match",
             headers=auth_header,
@@ -102,7 +103,7 @@ def test_analyze_skill_gap_endpoint(client, db_session, auth_header):
     assert "learning_path" in data["recommendations"]
 
 
-@patch("app.api.endpoints.assessments.generate_quiz")
+@patch("app.api.endpoints.assessments.gemini_service.generate_quiz")
 def test_generate_assessment_endpoint(mock_gen_quiz, client, db_session, auth_header):
     """Test generating a quiz assessment based on analysis missing skills."""
     from app.models import User, Resume, JobDescription, AnalysisResult

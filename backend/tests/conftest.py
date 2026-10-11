@@ -47,3 +47,41 @@ def client(db_session):
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+@pytest.fixture(scope="function")
+def normal_user_token_headers(client):
+    """
+    Registers and logs in a test user to return a Bearer authorization token header.
+    """
+    client.post(
+        "/api/auth/register",
+        json={"email": "user@example.com", "password": "password123", "full_name": "Auth User"}
+    )
+    login_response = client.post(
+        "/api/auth/login",
+        data={"username": "user@example.com", "password": "password123"}
+    )
+    token = login_response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+@pytest.fixture(scope="function")
+def admin_user_token_headers(client, db_session):
+    """
+    Registers and logs in an admin test user, returning the headers dict.
+    """
+    client.post(
+        "/api/auth/register",
+        json={"email": "admin@example.com", "password": "password123", "full_name": "Admin User"}
+    )
+    from app.models import User
+    user = db_session.query(User).filter(User.email == "admin@example.com").first()
+    if user:
+        user.is_admin = True
+        db_session.commit()
+        
+    login_response = client.post(
+        "/api/auth/login",
+        data={"username": "admin@example.com", "password": "password123"}
+    )
+    token = login_response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}

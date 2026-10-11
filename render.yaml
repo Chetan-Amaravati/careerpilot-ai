@@ -1,0 +1,38 @@
+services:
+  # FastAPI Backend Service
+  - type: web
+    name: careerpilot-backend
+    env: python
+    region: oregon
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: careerpilot-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: "*"
+
+  # React Frontend Static Site
+  - type: web
+    name: careerpilot-frontend
+    env: static
+    buildCommand: cd frontend && npm install --legacy-peer-deps && npm run build
+    staticPublishPath: ./frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: careerpilot-backend
+          property: url
+
+databases:
+  - name: careerpilot-db
+    region: oregon

@@ -1,10 +1,17 @@
 import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+from pydantic import Field, field_validator
 
 class Settings(BaseSettings):
     # DATABASE_URL is loaded from environment; we provide a fallback default
     DATABASE_URL: str = Field(default="postgresql://postgres:postgres@localhost:5432/resume_analyzer")
+    
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def assemble_db_connection(cls, v: str) -> str:
+        if isinstance(v, str) and v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql://", 1)
+        return v
     
     # JWT Auth settings
     JWT_SECRET_KEY: str = Field(default="supersecretjwtkeythatshouldbechangedinproduction12345!")
@@ -13,6 +20,9 @@ class Settings(BaseSettings):
     
     # Google Gemini settings
     GEMINI_API_KEY: str = Field(default="")
+
+    # CORS settings (comma-separated origins)
+    CORS_ORIGINS: str = Field(default="http://localhost:5173,http://127.0.0.1:5173")
 
     # Configuration specifying that settings should be read from the .env file
     model_config = SettingsConfigDict(

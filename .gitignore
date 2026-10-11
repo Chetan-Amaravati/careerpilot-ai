@@ -23,6 +23,10 @@ backend/*.db-journal
 
 # Local PDF uploads folder
 backend/uploads/
+backend/app/uploads/
+
+# Local cmd wrappers
+**/*.cmd
 
 # Sensitive API credentials and configuration
 backend/.env

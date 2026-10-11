@@ -79,3 +79,13 @@ def test_admin_restrictions(client: TestClient, normal_user_token_headers):
     # Normal user should be forbidden from admin endpoints
     response = client.get("/api/admin/stats", headers=normal_user_token_headers)
     assert response.status_code == 403
+
+
+def test_admin_access_success(client: TestClient, admin_user_token_headers):
+    # Admin user should be allowed to access admin endpoints successfully
+    response = client.get("/api/admin/stats", headers=admin_user_token_headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert "total_users" in data
+    assert "total_resumes" in data
+    assert "total_matches" in data

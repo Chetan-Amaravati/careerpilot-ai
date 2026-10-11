@@ -3,7 +3,8 @@ import {
   BarChart2, FileText, CheckCircle, AlertTriangle, Play, BookOpen, 
   GraduationCap, Code, LogOut, Loader, Award, RefreshCw, Layers, 
   User as UserIcon, Settings, MessageSquare, Bell, Moon, Sun, Shield, 
-  Briefcase, Plus, Trash2, Calendar, Target, Clock, ArrowRight, Star, ExternalLink
+  Briefcase, Plus, Trash2, Calendar, Target, Clock, ArrowRight, Star, ExternalLink,
+  Sparkles, Copy, Check, Wand2
 } from 'lucide-react'
 
 // Custom Visualizations
@@ -11,9 +12,18 @@ import RadarChart from './components/visualization/RadarChart'
 import HistoryChart from './components/visualization/HistoryChart'
 import SkillTree from './components/visualization/SkillTree'
 
-const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? '/api'
-  : 'https://careerpilot-backend-7pfx.onrender.com/api'
+const getApiUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL
+  if (envUrl && envUrl.trim()) {
+    return envUrl.trim().replace(/\/+$/, '')
+  }
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return '/api'
+  }
+  return 'https://careerpilot-backend-7pfx.onrender.com/api'
+}
+
+const API_URL = getApiUrl()
 
 interface Toast {
   id: string
@@ -57,6 +67,23 @@ export default function App() {
   const [coverLetter, setCoverLetter] = useState<any>(null)
   const [generatingLinkedIn, setGeneratingLinkedIn] = useState(false)
   const [linkedInTips, setLinkedInTips] = useState<any>(null)
+  const [studioTab, setStudioTab] = useState<'bullet' | 'cover_letter' | 'linkedin'>('bullet')
+  const [copiedField, setCopiedField] = useState<string | null>(null)
+
+  const copyToClipboard = (text: string, fieldId: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedField(fieldId)
+    triggerToast('Copied to clipboard!', 'success')
+    setTimeout(() => setCopiedField(null), 2000)
+  }
+
+  const loadJobPreset = (title: string, company: string, description: string) => {
+    setJobTitle(title)
+    setJobCompany(company)
+    setJobDescription(description)
+    triggerToast(`Loaded "${title}" preset!`, 'success')
+  }
+
   const [selectedBullet, setSelectedBullet] = useState('')
   const [targetRewriteJD, setTargetRewriteJD] = useState('')
   const [rewritingBullet, setRewritingBullet] = useState(false)
@@ -304,10 +331,11 @@ export default function App() {
         setToken(data.access_token)
         triggerToast('Welcome back to CareerPilot AI!', 'success')
       } else {
-        triggerToast('Invalid email or password.', 'error')
+        const data = await res.json().catch(() => null)
+        triggerToast(data?.detail || `Login failed (Status ${res.status}).`, 'error')
       }
     } catch (err) {
-      triggerToast('Connection to server failed.', 'error')
+      triggerToast('Connection to server failed. Verify API URL configuration.', 'error')
     }
   }
 
@@ -324,11 +352,11 @@ export default function App() {
         setAuthTab('login')
         setPassword('')
       } else {
-        const data = await res.json()
-        triggerToast(data.detail || 'Registration failed.', 'error')
+        const data = await res.json().catch(() => null)
+        triggerToast(data?.detail || `Registration failed (Status ${res.status}).`, 'error')
       }
     } catch (err) {
-      triggerToast('Connection to server failed.', 'error')
+      triggerToast('Connection to server failed. Verify API URL configuration.', 'error')
     }
   }
 
@@ -433,7 +461,14 @@ export default function App() {
 
   // Generate Tailored Cover Letter
   const handleGenerateCoverLetter = async () => {
-    if (!selectedResumeId || !activeAnalysis) return
+    if (!selectedResumeId) {
+      triggerToast('Please select or upload an active resume first.', 'warning')
+      return
+    }
+    if (!jobDescription.trim()) {
+      triggerToast('Please enter or paste a job description first.', 'warning')
+      return
+    }
     setGeneratingLetter(true)
     setCoverLetter(null)
 
@@ -834,6 +869,9 @@ export default function App() {
             <div className={`sidebar-item ${activeView === 'skills' ? 'active' : ''}`} onClick={() => setActiveView('skills')}>
               <Layers size={18} /> Skill Analytics
             </div>
+            <div className={`sidebar-item ${activeView === 'studio' ? 'active' : ''}`} onClick={() => setActiveView('studio')}>
+              <Sparkles size={18} color="var(--accent)" /> AI Career Studio
+            </div>
             <div className={`sidebar-item ${activeView === 'learning' ? 'active' : ''}`} onClick={() => setActiveView('learning')}>
               <BookOpen size={18} /> Study Roadmap
             </div>
@@ -848,7 +886,7 @@ export default function App() {
             </div>
             {user.is_admin && (
               <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
-                <div className={`sidebar-item ${activeView === 'admin' ? 'active' : ''}`} onClick={() => setActiveView('admin')}>
+                <div className={`sidebar-item ${activeView === 'admin' ? 'active' : ''}`} onClick={() => { setActiveView('admin'); fetchAdminStats(); }}>
                   <Shield size={18} color="var(--secondary)" /> Admin Panel
                 </div>
               </div>
@@ -928,6 +966,18 @@ export default function App() {
                   </div>
                   <button className="btn btn-primary" type="submit" style={{ width: '100%', marginTop: '10px' }}>
                     Sign In to Platform
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setEmail('admin@careerpilot.ai')
+                      setPassword('Admin123!')
+                      triggerToast('Filled demo admin credentials. Click "Sign In" to enter!', 'info')
+                    }}
+                    style={{ width: '100%', marginTop: '10px', fontSize: '0.8rem' }}
+                  >
+                    ⚡ Autofill Demo Credentials
                   </button>
                 </form>
               ) : (
@@ -1161,11 +1211,20 @@ export default function App() {
                           </div>
                           <div>
                             <h4 style={{ fontSize: '0.9rem', marginBottom: '10px' }}>Strong Action Verbs</h4>
-                            <ul style={{ paddingLeft: '20px', fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                               {suggestions.action_verb_suggestions?.map((av: string, idx: number) => (
-                                <li key={idx}>{av}</li>
+                                <span
+                                  key={idx}
+                                  className="badge-chip badge-chip-primary"
+                                  style={{ cursor: 'pointer', fontSize: '0.78rem' }}
+                                  title="Click to copy"
+                                  onClick={() => copyToClipboard(av, `Verb-${idx}`)}
+                                >
+                                  {copiedField === `Verb-${idx}` ? <Check size={12} color="var(--success)" /> : <Copy size={12} />}
+                                  {av}
+                                </span>
                               ))}
-                            </ul>
+                            </div>
                           </div>
                         </div>
 
@@ -1237,6 +1296,48 @@ export default function App() {
               {/* Left Column: Form to match */}
               <div className="glass-panel" style={{ padding: '24px' }}>
                 <h3 style={{ marginBottom: '16px' }}>Match New Role</h3>
+
+                <div style={{ marginBottom: '18px' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
+                    Quick Role Presets
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <button
+                      type="button"
+                      className="preset-btn"
+                      onClick={() => loadJobPreset(
+                        'Lead Full Stack Engineer',
+                        'Stripe',
+                        'We are seeking a Lead Full Stack Engineer experienced in React 19, TypeScript, Python/FastAPI, PostgreSQL, and scalable microservices. Responsibilities include building resilient payment interfaces, automated CI/CD pipelines, Docker containerization, and mentoring junior developers.'
+                      )}
+                    >
+                      💼 Full Stack Engineer (Stripe)
+                    </button>
+                    <button
+                      type="button"
+                      className="preset-btn"
+                      onClick={() => loadJobPreset(
+                        'Cloud Backend Architect',
+                        'Netflix',
+                        'Looking for a Backend Architect specializing in high-throughput distributed systems. Required skills: Python, SQLAlchemy 2.0, PostgreSQL indexing, Redis caching, Docker, Kubernetes, AWS/GCP cloud services, and gRPC microservices.'
+                      )}
+                    >
+                      ⚡ Cloud Backend Architect (Netflix)
+                    </button>
+                    <button
+                      type="button"
+                      className="preset-btn"
+                      onClick={() => loadJobPreset(
+                        'AI Systems Engineer',
+                        'OpenAI',
+                        'Seeking an AI Systems Engineer to develop scalable LLM application pipelines, vector database search integrations, and evaluation benchmarks. Required: Python, Google Gemini / LLM APIs, prompt engineering, PyTest, Docker, and FastAPI.'
+                      )}
+                    >
+                      🤖 AI Systems Engineer (OpenAI)
+                    </button>
+                  </div>
+                </div>
+
                 <form onSubmit={handleMatchAnalyze}>
                   <div className="form-group">
                     <label className="form-label">Job Title</label>
@@ -1377,6 +1478,359 @@ export default function App() {
               </div>
 
             </div>
+          </div>
+        )}
+
+        {/* -------------------- VIEW: AI CAREER STUDIO -------------------- */}
+        {token && user && activeView === 'studio' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <div>
+                <h1 style={{ fontSize: '2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Sparkles size={26} color="var(--accent)" /> AI Career Studio
+                </h1>
+                <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
+                  Enterprise generative career tools powered by Google Gemini. Tailor cover letters, optimize LinkedIn profiles, and rewrite bullet points.
+                </p>
+              </div>
+            </div>
+
+            {/* Studio Navigation Pills */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '28px', background: 'var(--bg-input)', padding: '6px', borderRadius: '12px', border: '1px solid var(--border-color)', width: 'fit-content' }}>
+              <button
+                type="button"
+                className={`btn ${studioTab === 'bullet' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ borderRadius: '8px', padding: '8px 16px', fontSize: '0.82rem' }}
+                onClick={() => setStudioTab('bullet')}
+              >
+                <Wand2 size={15} /> ATS Bullet Rewriter
+              </button>
+              <button
+                type="button"
+                className={`btn ${studioTab === 'cover_letter' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ borderRadius: '8px', padding: '8px 16px', fontSize: '0.82rem' }}
+                onClick={() => setStudioTab('cover_letter')}
+              >
+                <FileText size={15} /> Cover Letter Architect
+              </button>
+              <button
+                type="button"
+                className={`btn ${studioTab === 'linkedin' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ borderRadius: '8px', padding: '8px 16px', fontSize: '0.82rem' }}
+                onClick={() => setStudioTab('linkedin')}
+              >
+                <Briefcase size={15} /> LinkedIn Optimizer
+              </button>
+            </div>
+
+            {/* SUB-VIEW 1: ATS Bullet Rewriter */}
+            {studioTab === 'bullet' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '32px' }}>
+                <div className="glass-panel" style={{ padding: '28px' }}>
+                  <h3 style={{ fontSize: '1.15rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Wand2 size={18} color="var(--primary)" /> Rewrite Weak Experience Bullets
+                  </h3>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+                    Transform passive statements into high-impact, metrics-driven bullet points packed with ATS keywords from your target job description.
+                  </p>
+
+                  <div style={{ marginBottom: '18px' }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>
+                      Try Example Bullet Points
+                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <button
+                        type="button"
+                        className="preset-btn"
+                        onClick={() => {
+                          setSelectedBullet('Built backend APIs and connected postgres database with Python.')
+                          setTargetRewriteJD('FastAPI, SQLAlchemy 2.0 ORM, PostgreSQL connection pooling, indexing, async endpoints, pytest')
+                        }}
+                      >
+                        ⚡ Backend: "Built backend APIs and connected postgres database..."
+                      </button>
+                      <button
+                        type="button"
+                        className="preset-btn"
+                        onClick={() => {
+                          setSelectedBullet('Helped team with deployment and tested application code before release.')
+                          setTargetRewriteJD('Docker containerization, GitHub Actions CI/CD pipelines, Kubernetes, automated test coverage, zero-downtime deployment')
+                        }}
+                      >
+                        ⚡ DevOps: "Helped team with deployment and tested application code..."
+                      </button>
+                      <button
+                        type="button"
+                        className="preset-btn"
+                        onClick={() => {
+                          setSelectedBullet('Created frontend pages and fixed responsive design bugs.')
+                          setTargetRewriteJD('React 19, TypeScript, state management, web performance optimization, mobile responsiveness, WCAG accessibility')
+                        }}
+                      >
+                        ⚡ Frontend: "Created frontend pages and fixed responsive design bugs..."
+                      </button>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleRewriteBullet}>
+                    <div className="form-group">
+                      <label className="form-label">Original Resume Bullet Point</label>
+                      <textarea
+                        className="form-input form-textarea"
+                        style={{ minHeight: '80px' }}
+                        value={selectedBullet}
+                        onChange={e => setSelectedBullet(e.target.value)}
+                        required
+                        placeholder="e.g. Worked on database optimization and written python code."
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Target ATS Keywords / Requirements</label>
+                      <input
+                        className="form-input"
+                        type="text"
+                        value={targetRewriteJD}
+                        onChange={e => setTargetRewriteJD(e.target.value)}
+                        required
+                        placeholder="e.g. FastAPI, SQLAlchemy ORM, PostgreSQL indexing, pytest, Docker"
+                      />
+                    </div>
+                    <button className="btn btn-primary" type="submit" disabled={rewritingBullet || !selectedResumeId} style={{ width: '100%' }}>
+                      {rewritingBullet ? 'Rewriting with Gemini...' : 'Optimize Bullet Point'}
+                    </button>
+                  </form>
+                </div>
+
+                <div className="glass-panel" style={{ padding: '28px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  {rewrittenBulletResult ? (
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <span className="badge-chip badge-chip-success">
+                          <CheckCircle size={14} /> Optimized ATS Bullet
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                          onClick={() => copyToClipboard(rewrittenBulletResult.rewritten_bullet, 'Bullet')}
+                        >
+                          {copiedField === 'Bullet' ? <Check size={14} color="var(--success)" /> : <Copy size={14} />}
+                          {copiedField === 'Bullet' ? 'Copied!' : 'Copy'}
+                        </button>
+                      </div>
+
+                      <div style={{ marginBottom: '16px', padding: '14px', background: 'var(--bg-input)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                        <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600 }}>Original</span>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px', textDecoration: 'line-through' }}>
+                          {rewrittenBulletResult.original_bullet}
+                        </p>
+                      </div>
+
+                      <div style={{ marginBottom: '16px', padding: '16px', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                        <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--success)', fontWeight: 700 }}>AI Rewritten Impact Bullet</span>
+                        <p style={{ fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 600, marginTop: '6px', lineHeight: 1.5 }}>
+                          • {rewrittenBulletResult.rewritten_bullet}
+                        </p>
+                      </div>
+
+                      <div style={{ padding: '12px 14px', background: 'var(--bg-input)', borderRadius: '8px', border: '1px solid var(--border-color)', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                        <strong style={{ color: 'var(--primary)' }}>Why this works: </strong>
+                        {rewrittenBulletResult.explanation}
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 20px' }}>
+                      <Wand2 size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                      <h4 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>Ready for Optimization</h4>
+                      <p style={{ fontSize: '0.82rem', maxWidth: '300px', margin: '0 auto' }}>
+                        Select a preset or enter your bullet point on the left to see the before & after comparison.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* SUB-VIEW 2: Cover Letter Architect */}
+            {studioTab === 'cover_letter' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '32px' }}>
+                <div className="glass-panel" style={{ padding: '28px' }}>
+                  <h3 style={{ fontSize: '1.15rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FileText size={18} color="var(--primary)" /> Tailor Cover Letter
+                  </h3>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+                    Generate an executive-level cover letter highlighting your matched skills and interest in the role.
+                  </p>
+
+                  <div className="form-group">
+                    <label className="form-label">Target Company (Optional)</label>
+                    <input
+                      className="form-input"
+                      type="text"
+                      value={jobCompany}
+                      onChange={e => setJobCompany(e.target.value)}
+                      placeholder="e.g. Stripe, Netflix, Google"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
+                      <label className="form-label" style={{ marginBottom: 0 }}>Target Job Description</label>
+                      <button
+                        type="button"
+                        style={{ border: 'none', background: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.74rem', fontWeight: 600 }}
+                        onClick={() => loadJobPreset(
+                          'Lead Full Stack Engineer',
+                          'Stripe',
+                          'We are seeking a Lead Full Stack Engineer experienced in React 19, TypeScript, Python/FastAPI, PostgreSQL, and scalable microservices. Responsibilities include building resilient payment interfaces, automated CI/CD pipelines, Docker containerization, and mentoring junior developers.'
+                        )}
+                      >
+                        Fill Sample JD
+                      </button>
+                    </div>
+                    <textarea
+                      className="form-input form-textarea"
+                      style={{ minHeight: '140px' }}
+                      value={jobDescription}
+                      onChange={e => setJobDescription(e.target.value)}
+                      placeholder="Paste the target job description requirements here..."
+                    />
+                  </div>
+
+                  <button
+                    className="btn btn-primary"
+                    type="button"
+                    onClick={handleGenerateCoverLetter}
+                    disabled={generatingLetter || !selectedResumeId || !jobDescription.trim()}
+                    style={{ width: '100%' }}
+                  >
+                    {generatingLetter ? 'Generating Tailored Letter...' : 'Generate Cover Letter'}
+                  </button>
+                </div>
+
+                <div className="glass-panel" style={{ padding: '28px' }}>
+                  {coverLetter ? (
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                        <div>
+                          <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600 }}>Subject</span>
+                          <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>{coverLetter.subject}</h4>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                          onClick={() => {
+                            const full = `${coverLetter.subject}\n\n${coverLetter.salutation},\n\n${coverLetter.introduction}\n\n${coverLetter.body}\n\n${coverLetter.closing}\n\n${coverLetter.sign_off}`
+                            copyToClipboard(full, 'CoverLetter')
+                          }}
+                        >
+                          {copiedField === 'CoverLetter' ? <Check size={14} color="var(--success)" /> : <Copy size={14} />}
+                          {copiedField === 'CoverLetter' ? 'Copied!' : 'Copy Letter'}
+                        </button>
+                      </div>
+
+                      <div style={{ fontSize: '0.88rem', lineHeight: 1.7, color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '420px', overflowY: 'auto', paddingRight: '8px' }}>
+                        <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{coverLetter.salutation},</p>
+                        <p>{coverLetter.introduction}</p>
+                        <p>{coverLetter.body}</p>
+                        <p>{coverLetter.closing}</p>
+                        <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{coverLetter.sign_off}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '50px 20px' }}>
+                      <FileText size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                      <h4 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>No Cover Letter Generated Yet</h4>
+                      <p style={{ fontSize: '0.82rem', maxWidth: '300px', margin: '0 auto' }}>
+                        Provide a job description and click "Generate Cover Letter" to craft an ATS-tailored application.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* SUB-VIEW 3: LinkedIn Profile Optimizer */}
+            {studioTab === 'linkedin' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '32px' }}>
+                <div className="glass-panel" style={{ padding: '28px' }}>
+                  <h3 style={{ fontSize: '1.15rem', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Briefcase size={18} color="var(--primary)" /> LinkedIn Optimization
+                  </h3>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>
+                    Generate keyword-optimized headlines and engaging About section summaries directly derived from your active resume skills.
+                  </p>
+
+                  <button
+                    className="btn btn-primary"
+                    type="button"
+                    onClick={handleOptimizeLinkedIn}
+                    disabled={generatingLinkedIn || !selectedResumeId}
+                    style={{ width: '100%', marginBottom: '14px' }}
+                  >
+                    {generatingLinkedIn ? 'Optimizing Profile...' : 'Analyze Resume & Optimize LinkedIn'}
+                  </button>
+                  <p style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    Uses active resume profile to extract core achievements and high-visibility keywords.
+                  </p>
+                </div>
+
+                <div className="glass-panel" style={{ padding: '28px' }}>
+                  {linkedInTips ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      <div style={{ padding: '18px', background: 'var(--bg-input)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                          <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700 }}>
+                            Recommended Headline
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                            onClick={() => copyToClipboard(linkedInTips.headline, 'Headline')}
+                          >
+                            {copiedField === 'Headline' ? <Check size={12} color="var(--success)" /> : <Copy size={12} />}
+                            {copiedField === 'Headline' ? 'Copied!' : 'Copy'}
+                          </button>
+                        </div>
+                        <p style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.4 }}>
+                          "{linkedInTips.headline}"
+                        </p>
+                      </div>
+
+                      <div style={{ padding: '18px', background: 'var(--bg-input)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                          <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700 }}>
+                            Optimized About / Summary
+                          </span>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                            onClick={() => copyToClipboard(linkedInTips.about_summary, 'Summary')}
+                          >
+                            {copiedField === 'Summary' ? <Check size={12} color="var(--success)" /> : <Copy size={12} />}
+                            {copiedField === 'Summary' ? 'Copied!' : 'Copy'}
+                          </button>
+                        </div>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                          {linkedInTips.about_summary}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '50px 20px' }}>
+                      <Briefcase size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                      <h4 style={{ fontSize: '1rem', color: 'var(--text-secondary)', marginBottom: '6px' }}>LinkedIn Insights</h4>
+                      <p style={{ fontSize: '0.82rem', maxWidth: '300px', margin: '0 auto' }}>
+                        Click "Analyze Resume & Optimize LinkedIn" to generate tailored profile headlines and summaries.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
